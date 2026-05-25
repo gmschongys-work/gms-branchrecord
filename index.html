@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GMS Branch Record Updater</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+
+    // --- PASTE YOUR FULL CSV DATA BELOW ---
+    const INITIAL_CSV_DATA = `id	customer	state	branch	department
+335259	CIMB - 19006	KUL	KUL Mid Valley Megamall, Lot G (E)-001 - 335259	
+8942	CIMB - 19006	SBH	SBH Lahad Datu (1008)- 8942	
+4430	CIMB - 19006	JHR	JHR Tmn Johor Jaya, Jln Dedap (0133)- 4430	
+3376	CIMB - 19006	PNG	PNG Pusat Bandar Seberang Jaya (0718)- 3376	
+16375	CIMB - 19006	SBH	SBH Sandakan, Bandar Utama (1010) - 16375	
+188304	CIMB - 19006	JHR	JHR Johor Bahru, Southkey (0102) - 188304	
+4610	CIMB - 19006	PNG	PNG Prima Tanjung (0712) - 4610	
+9766	CIMB - 19006	KTN	KTN Pasir Mas (0302)- 9766	
+35819	CIMB - 19006	SGR	SGR Shah Alam, Kota Kemuning (1278) - 35819	
+4577	CIMB - 19006	JHR	JHR JB, Bgn UMNO(0104)- 4577	
+6470	CIMB - 19006	JHR	JHR Kluang (0106) - 6470	
+212538	CIMB - 19006	SRW	SRW Miri, Times Square (1108)  - 212538	
+5195	CIMB - 19006	KUL	KUL Mid Valley Megamall (1446)- 5195	
+12935	Cambodia, CIMB - 31378		Monivong - 12935	
+48361	Cambodia, CIMB - 31378		Stung Meanchey - 48361	
+12940	Cambodia, CIMB - 31378		Norodom South (iCon) - 12940	
+21752	CIMB - 19006	PRK	PRK Ipoh, Jln Gopeng Gunung Rapat (0816)- 21752	
+254142	CIMB - 19006	MLK	MLK Tmn Melaka Raya - Unit 25, 27 & 29 (0401)  - 254142	
+2760	CIMB - 19006	PHG	PHG Kuantan, Jln Beserah (0620)- 2760	
+9386	CIMB - 19006	KUL	KUL Jln Bkt Bintang (1419) - 9386	
+183771	CIMB - 19006	KUL	KUL KL Gateway (1487)  - 183771	
+14814	CIMB - 19006	SGR	SGR Puchong, Kinrara (1276) - 14814	
+6862	CIMB - 19006	KUL	KUL Bkt Tunku (1456) - 6862	
+22379	CIMB - 19006	NSN	NSN Rembau (0502)- 22379	
+198263	CIMB - 19006	JHR	JHR Senai, Jln Seni (0131) - 198263	
+5058	CIMB - 19006	SBH	SBH Kota Kinabalu, Jln Sagunting (1007)- 5058	
+5901	CIMB - 19006	KUL	KUL Jln Kuchai Lama (1466) - 5901	
+13877	CIMB - 19006	NSN	NSN Nilai, Tmn Semarak Nilai (0514)- 13877	
+3272	CIMB - 19006	PHG	PHG Kuantan, Jln Tun Ismail (0601) - 3272	
+7874	CIMB - 19006	PNG	PNG Kepala Batas (0704) - 7874	
+13477	CIMB - 19006	JHR	JHR Tmn Ungku Tun Aminah (0125)- 13477	
+4427	CIMB - 19006	TRG	TRG Kuala Terengganu, Jln Sultan Ismail (1302)- 4427	
+6390	CIMB - 19006	JHR	JHR Skudai, Tmn Impian Emas (0135)- 6390	
+4938	CIMB - 19006	KUL	KUL Jln Tun Sambanthan, Wisma Koponas (1426) - 4938	
+283128	CIMB - 19006	TRG	TRG  Kerteh - 283128	
+8479	CIMB - 19006	JHR	JHR Kota Tinggi (0115) - 8479	
+7945	CIMB - 19006	NSN	NSN Seremban 2 (0516) - 7945	
+3757	CIMB - 19006	NSN	NSN Port Dickson (0508) - 3757	
+7348	CIMB - 19006	KDH	KDH Sg Petani, Jln Kg Baru (0206) - 7348	
+29105	CIMB - 19006	KTN	KTN Kubang Kerian (0308) - 29105	
+13781	CIMB - 19006	PRK	PRK Ipoh, Jln Tun Sambanthan (0821)- 13781	
+11487	CIMB - 19006	JHR	JHR Batu Pahat, Bukit Pasir (0142) - 11487	
+9832	CIMB - 19006	JHR	JHR Muar, Jln Sulaiman (0113)- 9832	
+9781	CIMB - 19006	TRG	TRG Kemaman, Tmn Cukai Utama (1313) - 9781	
+3350	CIMB - 19006	JHR	JHR Segamat (0112) - 3350	
+6955	CIMB - 19006	KDH	KDH Alor Setar, Persiaran Sultan Abdul Hamid (0204)- 6955	
+2707	CIMB - 19006	JHR	JHR JB, Jln Kuning Dua (0130) - 2707	
+10296	CIMB - 19006	KUL	KUL Corporate HQ, Menara CIMB, KL Sentral - 10296	
+4063	CIMB - 19006	KUL	KUL Setapak, Tmn Danau Kota (1438) - 4063	
+6464	CIMB - 19006	JHR	JHR Pontian Kechil (0107)- 6464	
+8427	CIMB - 19006	JHR	JHR Skudai, Tmn Universiti (0108)- 8427	
+3501	CIMB - 19006	PNG	PNG University Sains Malaya USM (0709)- 3501	
+3957	CIMB - 19006	SRW	SRW Sibu (1109) - 3957	
+4894	CIMB - 19006	PNG	PNG Tanjung, Lebuh Pantai (0722)- 4894	
+7488	CIMB - 19006	JHR	JHR Perling (0137)- 7488	
+4050	CIMB - 19006	KUL	KUL Jln Sg.Besi (1411) - 4050	
+6290	CIMB - 19006	SGR	SGR Bangi, Bdr Baru Bangi (1247) - 6290	
+5198	CIMB - 19006	PNG	PNG Butterworth, Raja Uda (0719)- 5198	
+10905	CIMB - 19006	PNG	PNG Sg Bakap (0731) - 10905	
+3014	CIMB - 19006	NSN	NSN Senawang (0510) - 3014	
+16399	CIMB - 19006	SGR	SGR Shah Alam, Sec 18 (1226) - 16399	
+5989	CIMB - 19006	PNG	PNG Seri Damai (0737)- 5989	
+6600	CIMB - 19006	SBH	SBH Keningau (1003)- 6600	
+8438	CIMB - 19006	JHR	JHR Pasir Gudang, Pusat Perdagangan (0109)- 8438	
+15583	CIMB - 19006	SGR	SGR Tmn Seri Gombak (1223) - 15583	
+15842	CIMB - 19006	PHG	PHG Cameron Highland, Ringlet (0619)- 15842	
+12212	CIMB - 19006	JHR	JHR Tmn Nusa Bestari (0129)- 12212	
+242750	CIMB - 19006	JHR	JHR Forest City - 242750	
+27140	CIMB - 19006	JHR	JHR Kebun Teh (0110) - 27140	
+12608	CIMB - 19006	JHR	JHR Tampoi (0116)- 12608	
+139327	CIMB - 19006	JHR	JHR Nusajaya, Gleneagles Medini (0144)  - 139327	
+13032	CIMB - 19006	KUL	KUL Sentul Raya (1436) - 13032	
+2972	CIMB - 19006	PNG	PNG Penang Main, Menara BHL (0742) - 2972	
+6948	CIMB - 19006	PNG	PNG Prangin Mall (0713)- 6948	
+4799	CIMB - 19006	SBH	SBH Tawau (1006)- 4799	
+8745	CIMB - 19006	PRK	PRK Sitiawan (0817)- 8745	
+5416	CIMB - 19006	PRK	PRK Ipoh, Persiaran Greentown (0826)- 5416	
+205667	CIMB - 19006	SBH	SBH Sandakan, Midtown Plaza (1004) - 205667	
+11137	CIMB - 19006	NSN	NSN Bahau (0515)- 11137	
+3513	CIMB - 19006	PRK	PRK Parit Buntar (0806) - 3513	
+23879	CIMB - 19006	PRK	PRK Kuala Kangsar (0814)- 23879	
+20413	CIMB - 19006	KDH	KDH Langkawi, Kuah (0213)- 20413	
+15777	CIMB - 19006	PNG	PNG Queensbay Mall (0744)- 15777	
+7043	CIMB - 19006	PNG	PNG Bukit Mertajam, Maju Utama (0745) - 7043	
+7910	CIMB - 19006	PNG	PNG Bayan Baru, Jln Mahsuri (0714) - 7910	
+16376	CIMB - 19006	LBN	LBN Labuan (1501) - 16376	
+10474	CIMB - 19006	SGR	SGR Kuala Selangor (1257) - 10474	
+14347	CIMB - 19006	TRG	TRG Dungun (1304) - 14347	
+5230	CIMB - 19006	PRK	PRK Menglembu (0825)- 5230	
+7613	CIMB - 19006	JHR	JHR JB, Gelang Patah (0119) - 7613	
+20991	CIMB - 19006	MLK	MLK Tmn Cheng Perdana (0416)- 20991	
+13784	CIMB - 19006	KDH	KDH Sg Petani, Wisma Ria (0203)- 13784	
+12286	CIMB - 19006	KDH	KDH Kulim (0208)- 12286	
+5679	CIMB - 19006	PNG	PNG Prai, Jln Bahru (0733)- 5679	
+3209	CIMB - 19006	KDH	KDH Alor Setar, Mergong (0217)- 3209	
+5552	CIMB - 19006	PNG	PNG Ayer Itam, Jln Ayer Itam (0735)- 5552	
+134246	CIMB - 19006	SBH	SBH Kota Kinabalu, Riverson Soho (1014) - 134246	
+4236	CIMB - 19006	KUL	KUL Jln TAR (1432) - 4236	
+217962	CIMB - 19006	MLK	MLK Tmn Kota Laksamana - 217962	
+9891	CIMB - 19006	PRK	PRK Teluk Intan (0802)- 9891	
+2880	CIMB - 19006	PRK	PRK Kampar (0808) - 2880	
+15851	CIMB - 19006	SBH	SBH Ranau (1005)- 15851	
+176900	CIMB - 19006	SBH	SBH Kota Kinabalu, Damai Plaza - 176900	
+6554	CIMB - 19006	JHR	JHR Bdr Baru Permas Jaya (0123)- 6554	
+100202	CIMB - 19006	PNG	PNG Batu Maung (0723) - 100202	
+6424	CIMB - 19006	PNG	PNG Ayer Itam, Bdr Baru Ayer Itam (0716)- 6424	
+9382	CIMB - 19006	SGR	SGR Cyberjaya, Prima 5-A (1255) - 9382	
+5556	CIMB - 19006	MLK	MLK Jln Simpang Empat (0412)- 5556	
+5997	CIMB - 19006	MLK	MLK Batu Berendam (0406)- 5997	
+3660	CIMB - 19006	KDH	KDH Guar Chempedak (0202) - 3660	
+20412	CIMB - 19006	KDH	KDH Jitra (0211)- 20412	
+5670	CIMB - 19006	SBH	SBH Kota Kinabalu, Api-Api Centre (1002)- 5670	
+4229	CIMB - 19006	SBH	SBH Kota Kinabalu, Inanam (1009) - 4229	
+16377	CIMB - 19006	SRW	SRW Sarikei (1113) - 16377	
+12063	CIMB - 19006	SBH	SBH Bundusan (1013) - 12063	
+4115	CIMB - 19006	KDH	KDH Alor Setar, Bgn UMNO (0205) - 4115	
+3206	CIMB - 19006	JHR	JHR Labis (0121)- 3206	
+8757	CIMB - 19006	SRW	SRW Kuching, Jln Satok (1105)- 8757	
+6414	CIMB - 19006	JHR	JHR Batu Pahat, Jln Rahmat (0105) - 6414	
+16087	CIMB - 19006	PRK	PRK Ipoh Garden (0811)- 16087	
+12833	CIMB - 19006	PLS	PLS Kangar (0902) - 12833	
+4388	CIMB - 19006	PNG	PNG Pulau Tikus (0715)- 4388	
+7541	CIMB - 19006	PNG	PNG Bukit Mertajam, Sri Rambai (0738)- 7541	
+12518	CIMB - 19006	PRK	PRK Bercham (0828)- 12518	
+5296	CIMB - 19006	SGR	SGR Subang Jaya, USJ 9 (1209)- 5296	
+82462	CIMB - 19006	KUL	KUL Tmn Tun Dr Ismail, Menara LGB - 82462- Closed	
+5113	CIMB - 19006	KTN	KTN Pasir Puteh (0306)- 5113	
+11652	CIMB - 19006	KTN	KTN Kota Bharu, Jln Maju (0311) - 11652	
+104303	CIMB - 19006	SGR	SGR Cheras Selatan, Dataran C180 (1210) - 104303	
+18956	CIMB - 19006	PRK	PRK Batu Gajah (0809)- 18956	
+289212	CIMB - 19006	PNG	PNG Simpang Ampat, Iconic Point - 289212	
+2983	CIMB - 19006	PNG	PNG Butterworth, Tmn Selat (0705) - 2983	
+7846	CIMB - 19006	KTN	KTN Tanah Merah (0304)- 7846	
+39471	CIMB - 19006	MLK	MLK Ayer Keroh (0411) - 39471	
+4815	CIMB - 19006	NSN	NSN Lukut (0518)- 4815	
+37174	CIMB - 19006	TRG	TRG Kerteh, Mesra Mall Kemasik (1306) - 37174- Closed	
+14273	CIMB - 19006	KTN	KTN Machang (0303)-14273	
+10209	CIMB - 19006	SRW	SRW Miri, Boulevard (1112) - 10209	
+10397	CIMB - 19006	JHR	JHR Muar, Bkt Gambir (0132)- 10397	
+162793	CIMB - 19006	SRW	SRW Bintulu Sentral - 162793	
+3685	CIMB - 19006	NSN	NSN Seremban, Jln Dato Bandar Tunggal (0506) - 3685	
+4567	CIMB - 19006	TRG	TRG Jerteh (1303)- 4567	
+7476	CIMB - 19006	JHR	JHR Kulai (0111)- 7476	
+4058	CIMB - 19006	PRK	PRK Taiping (0804)- 4058	
+13244	CIMB - 19006	JHR	JHR Tmn Daya (0122)- 13244	
+15650	CIMB - 19006	SGR	SGR Ampang, Tmn Putra (1228) - 15650	
+9142	CIMB - 19006	SRW	SRW Kuching, Twin Towers (1103)- 9142	
+8549	CIMB - 19006	SGR	SGR Subang Jaya, Empire Shopping Gallery (1224) - 8549	
+3750	CIMB - 19006	SGR	SGR Sg Buloh, Bdr Baru Sg Buloh (1229) - 3750	
+282855	CIMB - 19006	PJY	PJY IOI City Tower 2- 282855	
+31437	CIMB - 19006	KUL	KUL Jln Klang Lama, The Scott Garden Mall (1428) - 31437	
+16379	CIMB - 19006	KUL	KUL Gleneagles Ampang (1454) - 16379	
+16403	CIMB - 19006	SGR	SGR Petaling Jaya, SS2 (1277)- 16403	
+9649	CIMB - 19006	SGR	SGR Klang, Jln Dato Hamzah (1203)- 9649	
+15854	CIMB - 19006	PHG	PHG Kuala Lipis (0613)- 15854	
+6839	CIMB - 19006	PHG	PHG Raub (0608)- 6839	
+11999	CIMB - 19006	SRW	SRW Bdr Sri Aman (1110)- 11999	
+3342	CIMB - 19006	SRW	SRW Kuching, Khoo Hun Yeang Street (1101) - 3342	
+185085	CIMB - 19006	SRW	SRW Kuching, Taman BDC - 185085	
+9949	CIMB - 19006	SRW	SRW Kuching, Jln Chan Chin Ann (Ex: Jln TAR) (1115)- 9949	
+3814	CIMB - 19006	KUL	KUL KLCC (1430) - 3814	
+6486	CIMB - 19006	KUL	KUL Starhill, Starhill Garden (1453)- 6486	
+6187	CIMB - 19006	SGR	SGR Kota Damansara, The Strand (1293) - 6187	
+6384	CIMB - 19006	PHG	PHG Bentong (0618)- 6384	
+4704	CIMB - 19006	KUL	KUL Bangsar, Lucky Garden (1427) - 4704	
+16613	CIMB - 19006	SGR	SGR Banting (1202) - 16613	
+15814	CIMB - 19006	SRW	SRW Serian (1107) - 15814	
+45880	CIMB - 19006	SGR	SGR Klang, Casa (1221) - 45880	
+14274	CIMB - 19006	KUL	KUL Bdr Sri Damansara (1252) - 14274	
+7783	CIMB - 19006	KUL	KUL Cheras, Taman Mutiara (1409) - 7783	
+10225	CIMB - 19006	KUL	KUL Bdr Baru Seri Petaling (1429)- 10225	
+16685	CIMB - 19006	SGR	SGR Telok Panglima Garang (1231) - 16685	
+3888	CIMB - 19006	KUL	KUL Tmn Melawati (1441) - 3888	
+2819	CIMB - 19006	PHG	PHG Kuantan, Jln Bank (0605) - 2819	
+11096	CIMB - 19006	PHG	PHG Jerantut (0606) - 11096	
+15582	CIMB - 19006	SGR	SGR Petaling Jaya, Jaya One (1294) - 15582	
+4964	CIMB - 19006	KUL	KUL Tmn Setiawangsa (1435) - 4964	
+5570	CIMB - 19006	SGR	SGR Puchong, Bdr Puteri Puchong (1238)- 5570	
+9295	CIMB - 19006	SGR	SGR Bkt Tinggi (1260)- 9295	
+4221	CIMB - 19006	KUL	KUL Tmn Tun Dr Ismail (1421)- 4221	
+169581	CIMB - 19006	SGR	SGR Kajang, Jln Avenue 1A - 169581	
+2890	CIMB - 19006	KUL	KUL Kepong, Desa Jaya (1251) - 2890	
+7029	CIMB - 19006	SGR	SGR Petaling Jaya, Damansara Utama (1250) - 7029	
+5422	CIMB - 19006	SGR	SGR Petaling Jaya, Sec 52 (1248)- 5422	
+2759	CIMB - 19006	SGR	SGR Balakong, Taming Jaya (1287) - 2759	
+9048	CIMB - 19006	SGR	SGR Petaling Jaya, Sunway Mas Commercial Centre (1288) - 9048	
+4111	CIMB - 19006	SGR	SGR Puchong, Jln Kenari (1264) - 4111	
+5703	CIMB - 19006	SGR	SGR Kajang, Country Heights (1232)- 5703	
+43622	CIMB - 19006	SGR	SGR Shah Alam, Glenmarie (1237) - 43622	
+11655	CIMB - 19006	MLK	MLK Bkt Baru (0408)- 11655	
+6812	CIMB - 19006	SGR	SGR Pelabuhan Klang (1214)- 6812	
+11371	CIMB - 19006	KUL	KUL Selayang (1412) - 11371	
+13739	CIMB - 19006	KUL	KUL Wisma Genting (1417)- 13739	
+4784	CIMB - 19006	SGR	SGR Serdang Perdana (1259) - 4784	
+12619	CIMB - 19006	SGR	SGR Dengkil, Tmn Nilam (1267) - 12619	
+81569	CIMB - 19006	SGR	SGR Kajang, Pearl Avenue (1268) - 81569	
+99854	CIMB - 19006	SGR	SGR Seri Kembangan, Tmn Equine (1282) - 99854	
+5098	CIMB - 19006	SGR	SGR Rawang (1233) - 5098	
+254020	CIMB - 19006	SGR	SGR Petaling Jaya, Kelana Jaya, HighPark Suite - 254020	
+2871	CIMB - 19006	SGR	SGR Petaling Jaya, Bdr Utama (1246)- 2871	
+47699	CIMB - 19006	SGR	SGR Petaling Jaya, Ara Damansara (1230) - 47699	
+5255	CIMB - 19006	SGR	SGR Petaling Jaya, The Curve (1258)- 5255	
+3141	CIMB - 19006	SGR	SGR Sg Besar (1213) - 3141	
+5220	CIMB - 19006	PHG	PHG Pekan (0602)- 5220	
+3181	CIMB - 19006	PJY	PJY Putrajaya (1601) - 3181	
+82463	CIMB - 19006	SGR	SGR Petaling Jaya, Seciton 14, Jaya Shopping Mall (1249) - 82463	
+3134	CIMB - 19006	KUL	KUL Tmn Maluri (1422) - 3134	
+14062	CIMB - 19006	PNG	PNG Prai, Auto City (0720)- 14062	
+14281	CIMB - 19006	KUL	KUL Cheras, Tmn Connaught, Jalan Cheras (1442) - 14281	
+47418	CIMB - 19006	KUL	KUL Damansara Heights, Wisma UOA II (1415) - 47418	
+4113	CIMB - 19006	SGR	SGR Klang, Plaza Centro (1269) - 4113	
+98667	CIMB - 19006	SGR	SGR Shah Alam, Plaza Azalea (1205) - 98667	
+10194	CIMB - 19006	SGR	SGR Shah Alam, Bdr Setia Alam (1290) - 10194	
+49556	CIMB - 19006	KUL	KUL Desa Park City (1486) - 49556	
+15585	CIMB - 19006	SGR	SGR Bangi, UKM Bangi (1218) - 15585	
+62688	CIMB - 19006	SGR	SGR Ampang, Bdr Baru Ampang, No. 2G & 4G (1263) - 62688	
+14768	CIMB - 19006	KUL	KUL Solaris Mont Kiara (1482)- 14768	
+4477	CIMB - 19006	SGR	SGR Klang, Bgn UMNO Kapar (1222)- 4477	
+8848	CIMB - 19006	KUL	KUL Jln Duta (1423) - 8848	
+4798	CIMB - 19006	SGR	SGR Petaling Jaya, Bdr Sunway (1244) - 4798	
+74759	CIMB - 19006	KUL	KUL Menara CIMB, KL Sentral (1479) - 74759	
+2764	CIMB - 19006	KUL	KUL KL Main, Menara Commerce, Jln Raja Laut (1408) - 2764	
+8659	CIMB - 19006	PHG	PHG Mentakab (0614)- 8659	
+255305	CIMB - 19006	KUL	KUL Rivercity, Jln Ipoh - 255305	
+4749	CIMB - 19006	KUL	KUL Pandan Indah (1444) - 4749	
+11369	CIMB - 19006	KUL	KUL Plaza Damansara (1471)- 11369	
+36609	CIMB - 19006	KUL	KUL Jln Tun Perak, Menara UAB (1414) - 36609	
+3164	CIMB - 19006	SGR	SGR KLIA Sepang (1227)- 3164	
+15775	CIMB - 19006	PNG	PNG Balik Pulau (0739)- 15775 - Closed	
+4824	CIMB - 19006	PLS	PLS Kuala Perlis (Ex-SBB)- 4824- Closed	
+3207	CIMB - 19006	PHG	PHG Karak (Ex-BCB)- 3207 - Closed	
+3460	CIMB - 19006	NSN	NSN Titi (0512)- 3460 - Closed	
+5139	CIMB - 19006	KTN	KTN Kota Bharu, Wakaf Che Yeh (0313) - 5139 - Closed	
+66787	CIMB - 19006	KUL	KUL Menara Binjai (1425) - 66787 - Closed	
+9306	CIMB - 19006	PNG	PNG Bukit Mertajam, Jln Stesen (0729)- 9306 - Closed	
+268447	CIMB - 19006	SRW	SRW Kuching, Tabuan Tranquility 3 (TT3)  - 268447	
+12013	CIMB - 19006	KUL	KUL Jln Ipoh (1406) - 12013 - Closed	
+3430	CIMB - 19006	MLK	MLK Tmn Melaka Raya (0401) - 3430 - Closed	
+4783	CIMB - 19006	SRW	SRW Kuching, Jln Rubber (1116)- 4783- Closed	
+2683	CIMB - 19006	KUL	KUL Cheras, Tmn Connaught, Jln Sarjana (1458) - 2683 - Closed	
+245374	Cambodia, CIMB - 31378		Bak Touk - 245374	
+16620	CIMB - 19006	SGR	SGR Klang, Bdr Baru Klang (1291) - 16620 - Closed	
+85459	CIMB - 19006	SGR	SGR KLIA 2 - 85459 - Closed	
+8527	CIMB - 19006	JHR	JHR Parit Raja (0114)- 8527 - Closed	
+3628	CIMB - 19006	SGR	SGR Petaling Jaya, Sec 17 (1266) - 3628 - Closed	
+3213	CIMB - 19006	KTN	KTN Bachok (Ex-BCB)- 3213 - Closed	
+36865	CIMB - 19006	PRK	PRK Sri Manjung (0805) - 36865 - Closed	
+51181	CIMB - 19006	KUL	KUL Jln Pudu, Bgn Teong Kim Chai (1437) - 51181 - Closed	
+3204	CIMB - 19006	PRK	PRK Grik (0810) - 3204 - Closed	
+3138	CIMB - 19006	MLK	MLK Jln Hang Tuah (0403)- 3138 - Closed	
+4398	CIMB - 19006	SGR	SGR Petaling Jaya, Menara Choy Fook Onn - 4398 - Closed	
+4721	CIMB - 19006	KTN	KTN Kuala Krai (0309)- 4721- Closed	
+4718	CIMB - 19006	KUL	KUL Masjid India (1402) - 4718 - Closed	
+5772	CIMB - 19006	TRG	TRG Kemaman, Chukai Kemaman, Jln Sulaiman (Ex-BCB)- 5772 - Closed	
+5042	CIMB - 19006	PNG	PNG Dato Keramat (0734)- 5042 - Closed	
+6074	CIMB - 19006	PHG	PHG Temerloh (Ex-BCB)- 6074 - Closed	
+6225	CIMB - 19006	SGR	SGR Tmn Sri Selayang (Ex-SBB)- 6225 - Closed	
+7118	CIMB - 19006	KDH	KDH Sg Petani, Tmn Sejati Indah (0214)- 7118 - Closed	
+6335	CIMB - 19006	KUL	KUL KL Sentral (1479) - 6335 - Closed	
+6859	CIMB - 19006	PRK	PRK Kamunting (Ex-SBB) - 6859 -Closed	
+7918	CIMB - 19006	KDH	KDH Gurun (Ex-SBB) - 7918 - Closed	
+8696	CIMB - 19006	JHR	JHR Tmn Pelangi (0102)- 8696 - Closed	
+7761	CIMB - 19006	PRK	PRK Ipoh, Jln Kampar (0827) - 7761 - Closed	
+10529	CIMB - 19006	PRK	PRK Langkap (0823)- 10529 - Closed	
+12299	CIMB - 19006	KTN	KTN Gua Musang (0307)- 12299 - Closed	
+12297	CIMB - 19006	MLK	MLK Masjid Tanah (Ex-BCB)- 12297 - Closed	
+114932	CIMB - 19006	KUL	KUL Jln Sultan (1467) - 114932- Closed	
+14272	CIMB - 19006	KTN	KTN Kota Bharu, Jln Che Su - 14272- Closed	
+15774	CIMB - 19006	PNG	PNG Nibong Tebal (0728)- 15774 - Closed	
+34655	CIMB - 19006	SGR	SGR The Mines (Ex-BCB)- 34655- Closed	
+15773	CIMB - 19006	PNG	PNG Batu Feringgi (0740)- 15773 - Closed	
+12714	CIMB - 19006	KTN	KTN Kota Bharu, Wakaf Siku (Ex-BCB)- 12714 - Closed	
+12845	CIMB - 19006	JHR	JHR Tmn Molek (Ex-BCB)- 12845 - Closed	
+12709	CIMB - 19006	KTN	KTN Kota Bharu, Wisma Square Point (0301)- 12709 - Closed	
+3019	CIMB - 19006	PRK	PRK Lumut (Ex-BCB) - 3019 - Closed	
+15643	CIMB - 19006	KUL	KUL Bkt Damansara, Millennium Pusat Bdr Damansara Mini Club - 15643 - Closed	
+12680	CIMB - 19006	PNG	PNG Jelutong (0721)- 12680 - Closed	
+16378	CIMB - 19006	KUL	KUL Damansara Town Centre (Ex-BCB) - 16378 - Closed	
+3022	CIMB - 19006	SGR	SGR Salak Tinggi (Ex-BCB) - 3022 - Closed	
+14277	CIMB - 19006	KUL	KUL Jln P.Ramlee (1473) - 14277 - Closed	
+22023	CIMB - 19006	PHG	PHG Cameron Highland, Tanah Rata (Ex-BCB) - 22023 - Closed	
+15893	CIMB - 19006	TRG	TRG Paka - 15893 - Closed	
+23596	CIMB - 19006	PRK	PRK Tanjung Malim (Ex-BCB)- 23596 - Closed	
+14939	CIMB - 19006	PRK	PRK Tapah (Ex-BCB)- 14939 - Closed	
+9875	CIMB - 19006	SBH	SBH Kota Kinabalu, One Borneo (1014) - 9875 - Closed	
+31218	CIMB - 19006	KUL	KUL City Walk, Jln P Ramlee - 31218 - Closed	
+18746	CIMB - 19006	KDH	KDH Pendang (0210)- 18746 - Closed	
+9110	CIMB - 19006	SGR	SGR Medan Maju Jaya Batu 7 (1270) - 9110 - Closed	
+15586	CIMB - 19006	SGR	SGR Bestari Jaya (Batang Berjuntai) (1201) - 15586 - Closed	
+238347	Cambodia, CIMB - 31378		Chomkar Mon - 238347	
+8610	CIMB - 19006	SGR	SGR Cyberjaya - 8610 - Closed	
+2701	CIMB - 19006	SGR	SGR Subang Jaya, Wisma Consplant (Ex-BCB)- 2701 - Closed	
+3632	CIMB - 19006	SGR	SGR Shah Alam, Sec 9 (1271) - 3632 - Closed	
+15849	CIMB - 19006	TRG	TRG Kerteh (Ex-BCB)- 15849 -Closed-	
+8874	CIMB - 19006	PNG	PNG Bayan Lepas (Ex-SBB)- 8874 - Closed	
+3924	CIMB - 19006	KUL	KUL Tmn Sri Rampai (Ex-SBB)- 3924 -Closed-	
+16614	CIMB - 19006	SGR	SGR Klang, Tmn Klang Utama (1292) - 16614 - Closed	
+5587	CIMB - 19006	SGR	SGR Subang Jaya, SS15 (1261) - 5587 - Closed	
+23870	CIMB - 19006	PRK	PRK Tasik (0824)- 23870 - Closed	
+5054	CIMB - 19006	SGR	SGR Petaling Jaya, Kelana Jaya (1216) - 5054- Closed	
+5924	CIMB - 19006	SGR	SGR Shah Alam, Hicom Industrial Park (1242)- 5924 - Closed	
+15853	CIMB - 19006	PHG	PHG Kompleks Teruntum (0612)- 15853 - Closed	
+4787	CIMB - 19006	KUL	KUL Kg Baru (1416) - 4787 - Closed	
+6810	CIMB - 19006	MLK	MLK Jasin (0407)- 6810 - Closed	
+3211	CIMB - 19006	PRK	PRK Jelapang (0818)- 3211 - Closed	
+40260	CIMB - 19006	PRK	PRK Bidor (0813) - 40260 - Closed	
+13356	CIMB - 19006	NSN	NSN Tampin (0509)- 13356 - Closed	
+12298	CIMB - 19006	NSN	NSN Kuala Pilah, Bkt Pilah Perdana (0503)- 12298 - Closed	
+9433	CIMB - 19006	NSN	NSN Bkt Pelanduk (0504)- 9433 - Closed	
+11162	CIMB - 19006	KDH	KDH Changlun (0212)- 11162 - Closed	
+3139	CIMB - 19006	JHR	JHR Mersing, Jln Ismail (0117)- 3139 - Closed	
+9757	CIMB - 19006	MLK	MLK Jln Bendahara, No.80 & 82 (Ex-SFB)- 9757 -closed-	
+56696	CIMB - 19006	MLK	MLK Jln Bendahara, No. 110 - Preferred Banking (0413) - 56696 -closed-	
+10547	CIMB - 19006	JHR	JHR Holiday Plaza - 10547 - Closed	
+2777	CIMB - 19006	KUL	KUL Wisma Indah (Ex-BCB)- 2777 - Closed	
+6716	CIMB - 19006	KUL	KUL Dang Wangi (Ex-BCB) - 6716 - Closed	
+6992	CIMB - 19006	KUL	KUL Pandan Jaya - 6992 - Closed	
+8117	CIMB - 19006	KUL	KUL Pearl Point (Ex-BCB)- 8117 - Closed	
+8575	CIMB - 19006	SGR	SGR Seri Kembangan (Ex-BCB)- 8575 - Closed	
+8577	CIMB - 19006	KUL	KUL Jln Raja Chulan (Ex-BCB)- 8577 - Closed	
+11000	CIMB - 19006	KUL	KUL Kepong (Ex-SBB)- 11000 - Closed	
+10116	CIMB - 19006	KUL	KUL Kg Pandan (Ex-SBB)- 10116 - Closed	
+4605	CIMB - 19006	PRK	PRK Ipoh, Jln Sultan Idris Shah (0803) - 4605 - Closed	
+6363	CIMB - 19006	SGR	SGR Klang, Plaza Metro (Ex-BCB)- 6363 - Closed	
+6350	CIMB - 19006	KUL	KUL Jln Imbi (1464) - 6350 - Closed	
+4940	CIMB - 19006	PRK	PRK Tanjung Rambutan (0815)- 4940 - Closed	
+9802	CIMB - 19006	SBH	SBH Kota Kinabalu, Kg Air (1012) - 9802 - Closed	
+7860	CIMB - 19006	SGR	SGR Batang Kali (1256) - 7860 - Closed	
+7833	CIMB - 19006	SBH	SBH Putatan (1015) - 7833 - Closed	
+12178	CIMB - 19006	SRW	SRW Miri, Jln Parry (1117) - 12178 - Closed	
+16486	CIMB - 19006	SGR	SGR Klang, Jln Kapar (1204) - 16486 - Closed	
+16381	CIMB - 19006	JHR	JHR Parit Sulong (0126)- 16381 - Closed	
+16621	CIMB - 19006	SGR	SGR Petaling Jaya, Jln Gasing (1265) - 16621 - Closed	
+10670	CIMB - 19006	SGR	SGR Balakong (Ex-BCB)- 10670 - Closed	
+15651	CIMB - 19006	SGR	SGR Rawang, Jln Maxwell (Closed) - 15651	
+15844	CIMB - 19006	TRG	TRG Kuala Terengganu, Padang Hiliran (1312) - 15844 - Closed	
+33365	CIMB - 19006	PHG	PHG Triang (0621) - 33365 - Closed	
+2829	CIMB - 19006	KUL	KUL Tmn Cheras (1433) - 2829 - Closed	
+3039	CIMB - 19006	SGR	SGR Ampang, Bdr Baru Ampang (Ex-BCB) - 3039 - Closed	
+3120	CIMB - 19006	SGR	SGR Kajang (1219) - 3120 - Closed	
+3208	CIMB - 19006	KDH	KDH Kuala Nerang (0207)- 3208 - Closed	
+3848	CIMB - 19006	PHG	PHG Genting Highland (0616) - 3848 - Closed	
+3879	CIMB - 19006	SGR	SGR Ampang Point (1253)- 3879 - Closed	
+3202	CIMB - 19006	MLK	MLK MMU Ayer Keroh - 3202 - Closed	
+3915	CIMB - 19006	NSN	NSN Seremban, Jln Tuanku Munawir (0517) - 3915 - Closed	
+4015	CIMB - 19006	KUL	KUL Kompleks Dayabumi (1424) - 4015 - Closed	
+4116	CIMB - 19006	PHG	PHG Bdr Muadzam Shah (0615)- 4116 - Closed	
+4399	CIMB - 19006	KUL	KUL Wangsa Maju, D Wangsa (1484) - 4399 - Closed	
+14523	CIMB - 19006	SRW	SRW Bintulu, Shahida Kompleks (1106)- 14523 - Closed	
+9423	CIMB - 19006	PRK	PRK Hutan Melintang (Ex-BCB)- 9423 -Closed-	
+6931	CIMB - 19006	JHR	JHR Senai, Jln Belimbing (0131)- 6931 - Closed	
+14280	CIMB - 19006	KUL	KUL Jln Tun H.S.Lee - 14280 -Closed-	
+15584	CIMB - 19006	SGR	SGR Kajang, Tmn Kajang Indah (Ex-SBB) - 15584 -Closed-	
+2670	CIMB - 19006	KUL	KUL Menara PNB (Ex-BCB) - 2670 -Closed-	
+3368	CIMB - 19006	KUL	KUL Jln Pudu (Ex-SBB)- 3368 -Closed-	
+5569	CIMB - 19006	SGR	SGR Shah Alam, Bgn UMNO Shah Alam (Ex-BCB)- 5569 -Closed-	
+7843	CIMB - 19006	SGR	SGR Petaling Jaya, Sea Park (Ex-BCB)- 7843 -Closed-	
+8846	CIMB - 19006	SRW	SRW Kuching, Wisma STA - 8846 -Closed-	
+8946	CIMB - 19006	SGR	SGR Ampang, Jln Besar (Ex-SBB)- 8946 -Closed	
+8818	CIMB - 19006	PNG	PNG Butterworth, Kg Gajah (Ex-SBB)- 8818 -Closed-	
+8045	CIMB - 19006	SGR	SGR Petaling Jaya, Sec 14 (Ex-SBB)- 8045 -Closed-	
+14067	CIMB - 19006	NSN	NSN Nilai, Bdr Baru Nilai (Ex-BCB)- 14067 -Closed-	
+7949	CIMB - 19006	JHR	JHR Tampoi, Bandar Baru Uda - 7949 -Closed-	
+15895	CIMB - 19006	PHG	PHG Genting Highland, Starworld Casino - 15895 - Closed	
+4302	CIMB - 19006	SGR	SGR Tmn Sri Batu Caves - 4302 - Closed	
+7777	CIMB - 19006	SGR	SGR Selayang Jaya (1286) - 7777 - Closed	
+223960	Cambodia, CIMB - 31378		Mao Tse Tong (MTT) - 223960	
+16400	CIMB - 19006	SRW	SRW Miri, Jln Permaisuri (1108) - 16400 - Closed	
+215675	Cambodia, CIMB - 31378		Exchange Square - 215675	
+15587	CIMB - 19006	SGR	SGR Sepang, Retail Forex LCCT - 15587	
+31736	CIMB - 19006	SGR	SGR KLIA Satellite Islamic - 31736	
+28731	CIMB - 19006	KUL	KUL Mid Valley, The Garden - 28731 - Closed	
+8948	CIMB - 19006	SRW	SRW Miri, Imperial Mall (Forex) - 8948	
+9216	CIMB - 19006	SGR	SGR Shah Alam, Sec 15 (Ex-SBB)- 9216 - Closed	
+15850	CIMB - 19006	SBH	SBH Sandakan (1004)- 15850 - Closed	
+3414	CIMB - 19006	PHG	PHG Pelabuhan Kuantan (Ex-BCB)- 3414 - Closed	
+4062	CIMB - 19006	KUL	KUL University Malaya (1440) - 4062 - Closed	
+31139	Cambodia, CIMB - 31378		Siem Reap - 31139	
+31116	Cambodia, CIMB - 31378		Sihanoukville - 31116	
+31142	Cambodia, CIMB - 31378		Olympic - 31142	
+31153	Cambodia, CIMB - 31378		Sihanouk Bolevard - 31153	
+31143	Cambodia, CIMB - 31378		Mao Seng Tong - 31143	
+15892	CIMB - 19006	SBH	SBH Kota Kinabalu Airport (Forex) - 15892	
+15890	CIMB - 19006	PHG	PHG Genting Highland, International Casino (Forex) - 15890	
+24527	CIMB - 19006	JHR	JHR Plentong, Tesco (Forex) - 24527	BDC
+24528	CIMB - 19006	JHR	JHR JB, Carrefour Shopping Complex (Forex) - 24528	
+23884	CIMB - 19006	KDH	KDH Langkawi Airport (Forex) - 23884	Retail Forex
+10057	CIMB - 19006	SGR	SGR Kajang, Metro Point (1275) - 10057- Closed -	
+16402	CIMB - 19006	SGR	SGR Shah Alam, Wisma Hicom (Ex-BCB)- 16402 - Closed	
+16401	CIMB - 19006	PJY	PJY Putrajaya, Precint 3 - 16401- Closed	
+15640	CIMB - 19006	KUL	KUL Swiss In, Retail Forex - 15640	Retail Forex
+15647	CIMB - 19006	SGR	SGR Batu Caves, Retail Forex - 15647	
+15649	CIMB - 19006	KUL	KUL Bdr Tun Razak - 15649 - Closed	
+15812	CIMB - 19006	PNG	PNG Penang, Card Centre - 15812 - Closed	
+15813	CIMB - 19006	PNG	PNG Penang Airport, Retail Forex - 15813	
+14276	CIMB - 19006	KUL	KUL Jinjang (1457) - 14276 - Closed	
+10849	CIMB - 19006	JHR	JHR Masai, Bdr Sri Alam (Ex-BCB)- 10849 -Closed-	
+7365	CIMB - 19006	SGR	SGR SAAS Subang Airport (Ex-BCB)- 7365 - Closed	
+3796	CIMB - 19006	SRW	SRW Bintulu, Tanjung Kidurong (1111)- 3796 - Closed	
+4064	CIMB - 19006	PNG	PNG Penang International Airport (Ex-BCB)(Forex) - 4064	
+202202	CIMB - 19006	KUL	KUL Times Sqr Convention Centre - 202202	
+12062	CIMB - 19006	SRW	SRW Kuching, Padawan (1119) - 12062 - Closed	
+49030	CIMB - 19006	KUL	KUL Bangsar South (1487) - 49030 - Closed	
+167906	Cambodia, CIMB - 31378		Tuek Thla - 167906	
+158766	CIMB - 19006	PHG	PHG Genting Highland, Podium Casino (Forex) - 158766	BDC
+14305	CIMB - 19006	SGR	SGR Cyberjaya, MMU (Ex-BCB)- 14305 -closed	
+140372	Cambodia, CIMB - 31378		Czechoslovakia Blvd (St 169), GT Tower - 140372	
+84092	CIMB - 19006	KUL	KUL Corporate Server, Plaza Damansara - 84092	
+115928	CIMB - 19006	SGR	SGR Sepang, Mitsui Outlet Park(Forex) - 115928	BDC
+97086	CIMB - 19006	PHG	PHG Genting Highland, Monte Carlo Casino (Forex) - 97086	
+63363	CIMB - 19006	KUL	KUL Jln Bkt Bintang, Federal Arked 7 (BDC)(Forex) - 63363	
+57073	Cambodia, CIMB - 31378		Phnom Penh, Preah Norodom (HQ) - 57073	
+48362	Cambodia, CIMB - 31378		Toul Kork - 48362	
+48359	Cambodia, CIMB - 31378		Battambang - 48359	
+48360	Cambodia, CIMB - 31378		Kampung Cham - 48360	
+8689	CIMB - 19006	KUL	KUL Jln Tun Sambanthan, Wisma Segar (Ex-BCB)- 8689 - Closed	
+8704	CIMB - 19006	PNG	PNG Paye Terubong (Ex-SBB) - 8704 -Closed	
+9904	CIMB - 19006	JHR	JHR Jln Abdul Rahman (Ex-SBB) - 9904 - Closed	
+8686	CIMB - 19006	KUL	KUL Tmn Tun Dr Ismail (Ex-SBB) - 8686 - Closed	
+6844	CIMB - 19006	KUL	KUL Central Market (Forex)- 6844	Retail Forex`;
+
+    // --- PRESET DEVICES ---
+    const PRESET_DEVICES = [
+      "Router", "Switch", "Firewall", "Access Point", 
+      "Server", "Desktop PC", "Laptop", "Printer", 
+      "CCTV Camera", "Biometric Reader", "UPS"
+    ];
+
+    // --- ICONS (SVG) ---
+    const Icons = {
+      Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>,
+      Filter: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>,
+      Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>,
+      Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
+      ArrowLeft: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>,
+      Check: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>,
+      Building: () => <svg className="w-6 h-6 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+    };
+
+    // --- HELPER: CSV Parser ---
+    const parseCSV = (text) => {
+      const rows = [];
+      let currentRow = [];
+      let currentCell = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+          if (inQuotes && text[i + 1] === '"') {
+            currentCell += '"'; i++; 
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          currentRow.push(currentCell.trim());
+          currentCell = '';
+        } else if (char === '\\n' && !inQuotes) {
+          currentRow.push(currentCell.trim());
+          if (currentRow.some(c => c !== '')) rows.push(currentRow);
+          currentRow = [];
+          currentCell = '';
+        } else if (char !== '\\r') {
+          currentCell += char;
+        }
+      }
+      if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        if (currentRow.some(c => c !== '')) rows.push(currentRow);
+      }
+
+      const headers = rows[0].map(h => h.toLowerCase());
+      return rows.slice(1).map(row => {
+        const record = {};
+        headers.forEach((header, index) => {
+          record[header] = row[index] || '';
+        });
+        record.department = record.department ? record.department : 'Nil';
+        record.state = record.state ? record.state : 'Nil';
+        return record;
+      }).filter(r => r.id); 
+    };
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [records, setRecords] = useState([]);
+      const [currentScreen, setCurrentScreen] = useState('selection'); 
+      const [selectedBranch, setSelectedBranch] = useState(null);
+
+      const [searchMode, setSearchMode] = useState('jobId'); 
+      const [searchInput, setSearchInput] = useState('');
+      const [searchError, setSearchError] = useState('');
+
+      const [selCustomer, setSelCustomer] = useState('');
+      const [selState, setSelState] = useState('');
+      const [selBranch, setSelBranch] = useState('');
+      const [selDept, setSelDept] = useState('');
+
+      const [userName, setUserName] = useState('');
+      const [selectedDeviceType, setSelectedDeviceType] = useState(PRESET_DEVICES[0]);
+      const [customDeviceName, setCustomDeviceName] = useState('');
+      const [addedDevices, setAddedDevices] = useState([]);
+      const [submitSuccess, setSubmitSuccess] = useState(false);
+
+      useEffect(() => {
+        const parsed = parseCSV(INITIAL_CSV_DATA);
+        setRecords(parsed);
+      }, []);
+
+      const resetSelection = () => {
+        setSelCustomer(''); setSelState(''); setSelBranch(''); setSelDept('');
+        setSearchInput(''); setSearchError('');
+      };
+
+      const uniqueCustomers = useMemo(() => [...new Set(records.map(r => r.customer))].sort(), [records]);
+      
+      const availableStates = useMemo(() => {
+        if (!selCustomer) return [];
+        return [...new Set(records.filter(r => r.customer === selCustomer).map(r => r.state))].sort();
+      }, [records, selCustomer]);
+
+      const availableBranches = useMemo(() => {
+        if (!selCustomer || !selState) return [];
+        return [...new Set(records.filter(r => r.customer === selCustomer && r.state === selState).map(r => r.branch))].sort();
+      }, [records, selCustomer, selState]);
+
+      const availableDepts = useMemo(() => {
+        if (!selCustomer || !selState || !selBranch) return [];
+        return [...new Set(records.filter(r => r.customer === selCustomer && r.state === selState && r.branch === selBranch).map(r => r.department))].sort();
+      }, [records, selCustomer, selState, selBranch]);
+
+      const handleSearchJobId = (e) => {
+        e.preventDefault();
+        setSearchError('');
+        const match = records.find(r => r.id === searchInput.trim());
+        if (match) {
+          startUpdateForm(match);
+        } else {
+          setSearchError('Job ID not found. Please verify and try again.');
+        }
+      };
+
+      const handleProceedHierarchy = () => {
+        const match = records.find(r => 
+          r.customer === selCustomer && 
+          r.state === selState && 
+          r.branch === selBranch && 
+          r.department === selDept
+        );
+        if (match) startUpdateForm(match);
+      };
+
+      const startUpdateForm = (branchData) => {
+        setSelectedBranch(branchData);
+        setUserName('');
+        setAddedDevices([]);
+        setSubmitSuccess(false);
+        setSelectedDeviceType(PRESET_DEVICES[0]);
+        setCustomDeviceName('');
+        setCurrentScreen('form');
+      };
+
+      const handleAddDevice = (e) => {
+        e.preventDefault();
+        let devName = selectedDeviceType;
+        if (devName === 'Custom') {
+          if (!customDeviceName.trim()) return;
+          devName = customDeviceName.trim();
+        }
+        setAddedDevices([...addedDevices, { id: Date.now(), name: devName, ip: '' }]);
+        if (selectedDeviceType === 'Custom') setCustomDeviceName('');
+      };
+
+      const handleUpdateDeviceIp = (id, newIp) => {
+        setAddedDevices(addedDevices.map(d => d.id === id ? { ...d, ip: newIp } : d));
+      };
+
+      const handleRemoveDevice = (id) => {
+        setAddedDevices(addedDevices.filter(d => d.id !== id));
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("Submitting Data:", { jobId: selectedBranch.id, userName: userName, devices: addedDevices });
+        setSubmitSuccess(true);
+        setTimeout(() => {
+          setCurrentScreen('selection');
+          resetSelection();
+        }, 3000);
+      };
+
+      if (currentScreen === 'selection') {
+        return (
+          <div className="min-h-screen text-slate-800 p-4 md:p-8 font-sans">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm mb-6 border border-gray-100">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-800 flex items-center">
+                    <Icons.Building /> GMS Branch Record Updater
+                  </h1>
+                  <p className="text-slate-500 text-sm mt-1">Select a branch to update device details.</p>
+                </div>
+                <div className="mt-4 md:mt-0">
+                  <div className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
+                    {records.length} records loaded
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+                <div className="flex border-b border-gray-200">
+                  <button onClick={() => setSearchMode('jobId')} className={\`flex-1 py-4 px-6 text-center font-medium transition-colors \${searchMode === 'jobId' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}\`}>
+                    <div className="flex items-center justify-center gap-2"><Icons.Search /> Search by Job ID</div>
+                  </button>
+                  <button onClick={() => setSearchMode('hierarchy')} className={\`flex-1 py-4 px-6 text-center font-medium transition-colors \${searchMode === 'hierarchy' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}\`}>
+                    <div className="flex items-center justify-center gap-2"><Icons.Filter /> Select from List</div>
+                  </button>
+                </div>
+
+                <div className="p-6 md:p-8">
+                  {searchMode === 'jobId' && (
+                    <form onSubmit={handleSearchJobId} className="max-w-md mx-auto space-y-6 py-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Enter Job ID</label>
+                        <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="e.g. 2669" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required />
+                        {searchError && <p className="text-red-500 text-sm mt-2">{searchError}</p>}
+                      </div>
+                      <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors shadow-sm">Find Record</button>
+                    </form>
+                  )}
+
+                  {searchMode === 'hierarchy' && (
+                    <div className="space-y-5 max-w-2xl mx-auto py-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Customer</label>
+                        <select value={selCustomer} onChange={(e) => { setSelCustomer(e.target.value); setSelState(''); setSelBranch(''); setSelDept(''); }} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                          <option value="">-- Select Customer --</option>
+                          {uniqueCustomers.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">State</label>
+                        <select value={selState} onChange={(e) => { setSelState(e.target.value); setSelBranch(''); setSelDept(''); }} disabled={!selCustomer} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <option value="">-- Select State --</option>
+                          {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Branch</label>
+                        <select value={selBranch} onChange={(e) => { setSelBranch(e.target.value); setSelDept(''); }} disabled={!selState} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <option value="">-- Select Branch --</option>
+                          {availableBranches.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Department</label>
+                        <select value={selDept} onChange={(e) => setSelDept(e.target.value)} disabled={!selBranch} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <option value="">-- Select Department --</option>
+                          {availableDepts.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                      <button onClick={handleProceedHierarchy} disabled={!selDept} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-medium py-3 rounded-lg transition-colors shadow-sm">Proceed to Update</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen text-slate-800 p-4 md:p-8 font-sans">
+          <div className="max-w-4xl mx-auto">
+            <button onClick={() => setCurrentScreen('selection')} className="flex items-center text-slate-500 hover:text-blue-600 mb-6 font-medium transition-colors">
+              <Icons.ArrowLeft /> Back to Selection
+            </button>
+
+            {submitSuccess && (
+              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center shadow-sm">
+                <Icons.Check />
+                <div>
+                  <h3 className="font-bold">Successfully Updated!</h3>
+                  <p className="text-sm">The branch record for Job ID {selectedBranch.id} has been saved. Returning to menu...</p>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="bg-slate-800 text-white p-6 md:p-8">
+                <h2 className="text-2xl md:text-3xl font-extrabold mb-2 leading-tight">{selectedBranch.branch}</h2>
+                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-slate-300 text-sm md:text-base">
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">JOB ID:</span> <span className="bg-slate-700 px-2 py-1 rounded text-white font-mono">{selectedBranch.id}</span></div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">CUSTOMER:</span> {selectedBranch.customer}</div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">STATE:</span> {selectedBranch.state}</div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">DEPT:</span> <span className={selectedBranch.department === 'Nil' ? 'italic text-slate-500' : ''}>{selectedBranch.department}</span></div>
+                </div>
+              </div>
+
+              <div className="p-6 md:p-8">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Your Name *</label>
+                      <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Enter your full name" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Job ID</label>
+                      <input type="text" value={selectedBranch.id} disabled className="w-full p-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 font-mono" />
+                    </div>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">Devices & IP Configuration</h3>
+                    
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
+                      <label className="block text-sm font-medium text-blue-900 mb-2">Add a Device</label>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <select value={selectedDeviceType} onChange={(e) => setSelectedDeviceType(e.target.value)} className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500">
+                          {PRESET_DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
+                          <option value="Custom">-- Custom Device --</option>
+                        </select>
+                        {selectedDeviceType === 'Custom' && (
+                          <input type="text" value={customDeviceName} onChange={(e) => setCustomDeviceName(e.target.value)} placeholder="Enter custom device name..." className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500" autoFocus />
+                        )}
+                        <button type="button" onClick={handleAddDevice} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center whitespace-nowrap"><Icons.Plus /> Add Device</button>
+                      </div>
+                    </div>
+
+                    {addedDevices.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400 border-2 border-dashed border-gray-200 rounded-xl">No devices added yet. Select a device above and click "Add Device".</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {addedDevices.map((device, index) => (
+                          <div key={device.id} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="w-full sm:w-1/3 font-semibold text-slate-700 flex items-center"><span className="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-md mr-3">{index + 1}</span>{device.name}</div>
+                            <div className="w-full sm:w-flex-1 flex-1"><input type="text" value={device.ip} onChange={(e) => handleUpdateDeviceIp(device.id, e.target.value)} placeholder="Enter IP Address (e.g. 192.168.1.100)" className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" required /></div>
+                            <button type="button" onClick={() => handleRemoveDevice(device.id)} className="w-full sm:w-auto p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remove Device"><Icons.Trash /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-4">
+                    <button type="button" onClick={() => setCurrentScreen('selection')} className="px-6 py-3 border border-gray-300 text-slate-600 font-medium rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" disabled={addedDevices.length === 0 || submitSuccess} className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold rounded-xl shadow-md transition-colors">{submitSuccess ? 'Submitted!' : 'Submit Update'}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- RENDER APP TO DOM ---
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
