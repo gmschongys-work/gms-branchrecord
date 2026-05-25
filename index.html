@@ -4,125 +4,303 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GMS Branch Record Updater</title>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-gray-50">
-  
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
 
-    // --- PRESET DEVICES ---
     const PRESET_DEVICES = [
-      "IQP600-70", "IQP600-40", "QP600", "QP650", "IQP700-70", "IQP700-40", "QP710", "QP750", "MTP7150", "MTP110", "MTP160", "MTP7191", "MTP7191Y", "MD50", "MD70", "MD75", "ICT250", "ICT260", "ICT7260"
+      "IQP600-70", "IQP600-40", "QP600", "QP650", "IQP700-70", "IQP700-40",
+      "QP710", "QP750", "MTP7150", "MTP110", "MTP160", "MTP7191", "MTP7191Y",
+      "MD50", "MD70", "MD75", "ICT250", "ICT260", "ICT7260"
     ];
 
-    // --- ICONS (SVG) ---
+    const DEFAULT_FLOORS = ["G Floor", "1st Floor", "2nd Floor"];
+    const DEVICE_NUMBER_PRESETS = ["1","2","3","4","5","6","7","8","9","10","Custom"];
+
     const Icons = {
-      Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>,
-      Filter: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>,
-      Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>,
-      Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
-      ArrowLeft: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>,
-      Check: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>,
-      Building: () => <svg className="w-6 h-6 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>,
-      Spinner: () => <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+      Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
+      Filter: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>,
+      Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
+      Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+      ArrowLeft: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>,
+      Check: () => <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
+      Building: () => <svg className="w-6 h-6 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>,
+      Spinner: () => <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>,
+      Layers: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
+      Network: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/></svg>,
     };
 
-    // --- HELPER: CSV Parser ---
     const parseCSV = (text) => {
       const rows = [];
-      let currentRow = [];
-      let currentCell = '';
-      let inQuotes = false;
-      
+      let currentRow = [], currentCell = '', inQuotes = false;
       for (let i = 0; i < text.length; i++) {
         const char = text[i];
         if (char === '"') {
-          if (inQuotes && text[i + 1] === '"') {
-            currentCell += '"'; i++; 
-          } else {
-            inQuotes = !inQuotes;
-          }
+          if (inQuotes && text[i + 1] === '"') { currentCell += '"'; i++; }
+          else { inQuotes = !inQuotes; }
         } else if (char === ',' && !inQuotes) {
-          currentRow.push(currentCell.trim());
-          currentCell = '';
+          currentRow.push(currentCell.trim()); currentCell = '';
         } else if (char === '\n' && !inQuotes) {
           currentRow.push(currentCell.trim());
           if (currentRow.some(c => c !== '')) rows.push(currentRow);
-          currentRow = [];
-          currentCell = '';
-        } else if (char !== '\r') {
-          currentCell += char;
-        }
+          currentRow = []; currentCell = '';
+        } else if (char !== '\r') { currentCell += char; }
       }
       if (currentCell || currentRow.length > 0) {
         currentRow.push(currentCell.trim());
         if (currentRow.some(c => c !== '')) rows.push(currentRow);
       }
-
       if (rows.length === 0) return [];
-
       const headers = rows[0].map(h => h.toLowerCase());
       return rows.slice(1).map(row => {
         const record = {};
-        headers.forEach((header, index) => {
-          record[header] = row[index] || '';
-        });
-        record.department = record.department ? record.department : 'Nil';
-        record.state = record.state ? record.state : 'Nil';
+        headers.forEach((header, index) => { record[header] = row[index] || ''; });
+        record.department = record.department || 'Nil';
+        record.state = record.state || 'Nil';
+        record.id = record.id ? String(record.id) : '';
         return record;
-      }).filter(r => r.id); 
+      }).filter(r => r.id);
     };
 
-    // --- MAIN APP COMPONENT ---
+    // ── Floor Section Component ──────────────────────────────────────────────
+    function FloorSection({ floor, index, onChange, onRemove, canRemove }) {
+      const [devices, setDevices] = useState(floor.devices || []);
+      const [selectedDeviceType, setSelectedDeviceType] = useState(PRESET_DEVICES[0]);
+      const [customDeviceName, setCustomDeviceName] = useState('');
+      const [networkDetails, setNetworkDetails] = useState(floor.networkDetails || { subnet: '', gateway: '', dnsList: [] });
+      const [showDNS, setShowDNS] = useState(false);
+
+      const syncUp = (newDevices, newNetwork) => {
+        onChange(index, { ...floor, devices: newDevices, networkDetails: newNetwork });
+      };
+
+      const handleAddDevice = () => {
+        let devName = selectedDeviceType;
+        if (devName === 'Custom') {
+          if (!customDeviceName.trim()) return;
+          devName = customDeviceName.trim();
+          setCustomDeviceName('');
+        }
+        const newDevices = [...devices, { id: Date.now(), name: devName, ip: '', deviceNumSelect: '1', deviceNumCustom: '' }];
+        setDevices(newDevices);
+        syncUp(newDevices, networkDetails);
+      };
+
+      const updateDevice = (id, field, value) => {
+        const newDevices = devices.map(d => d.id === id ? { ...d, [field]: value } : d);
+        setDevices(newDevices);
+        syncUp(newDevices, networkDetails);
+      };
+
+      const removeDevice = (id) => {
+        const newDevices = devices.filter(d => d.id !== id);
+        setDevices(newDevices);
+        syncUp(newDevices, networkDetails);
+      };
+
+      const updateNetwork = (field, value) => {
+        const nn = { ...networkDetails, [field]: value };
+        setNetworkDetails(nn);
+        syncUp(devices, nn);
+      };
+
+      const addDNS = () => {
+        const nn = { ...networkDetails, dnsList: [...(networkDetails.dnsList || []), { id: Date.now(), value: '' }] };
+        setNetworkDetails(nn);
+        syncUp(devices, nn);
+      };
+
+      const updateDNS = (dnsId, value) => {
+        const nn = { ...networkDetails, dnsList: networkDetails.dnsList.map(d => d.id === dnsId ? { ...d, value } : d) };
+        setNetworkDetails(nn);
+        syncUp(devices, nn);
+      };
+
+      const removeDNS = (dnsId) => {
+        const nn = { ...networkDetails, dnsList: networkDetails.dnsList.filter(d => d.id !== dnsId) };
+        setNetworkDetails(nn);
+        syncUp(devices, nn);
+      };
+
+      return (
+        <div className="border-2 border-blue-100 rounded-2xl overflow-hidden mb-6">
+          {/* Floor Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Icons.Layers />
+              <span className="text-white font-bold text-lg">{floor.name}</span>
+            </div>
+            {canRemove && (
+              <button type="button" onClick={() => onRemove(index)}
+                className="text-blue-200 hover:text-white hover:bg-blue-800 p-2 rounded-lg transition-colors" title="Remove floor">
+                <Icons.Trash />
+              </button>
+            )}
+          </div>
+
+          <div className="p-6 bg-white space-y-6">
+            {/* Network Details */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Icons.Network />
+                <h4 className="font-semibold text-slate-700">Network Details</h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">Subnet Mask</label>
+                  <input type="text" value={networkDetails.subnet} onChange={e => updateNetwork('subnet', e.target.value)}
+                    placeholder="e.g. 255.255.255.0"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">Gateway</label>
+                  <input type="text" value={networkDetails.gateway} onChange={e => updateNetwork('gateway', e.target.value)}
+                    placeholder="e.g. 192.168.1.1"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
+                </div>
+              </div>
+
+              {/* DNS Section */}
+              <div className="mt-4">
+                {!showDNS && (networkDetails.dnsList || []).length === 0 ? (
+                  <button type="button" onClick={() => { setShowDNS(true); addDNS(); }}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-3 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+                    <Icons.Plus /> Add DNS
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide">DNS Server(s)</label>
+                      <button type="button" onClick={addDNS}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                        <Icons.Plus /> Add DNS
+                      </button>
+                    </div>
+                    {(networkDetails.dnsList || []).map((dns, i) => (
+                      <div key={dns.id} className="flex gap-2 items-center">
+                        <span className="text-xs text-slate-400 w-16">DNS {i + 1}</span>
+                        <input type="text" value={dns.value} onChange={e => updateDNS(dns.id, e.target.value)}
+                          placeholder="e.g. 8.8.8.8"
+                          className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" />
+                        <button type="button" onClick={() => removeDNS(dns.id)}
+                          className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors">
+                          <Icons.Trash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Devices */}
+            <div>
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
+                <label className="block text-sm font-medium text-blue-900 mb-2">Add a Device</label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select value={selectedDeviceType} onChange={e => setSelectedDeviceType(e.target.value)}
+                    className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    {PRESET_DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
+                    <option value="Custom">-- Custom Device --</option>
+                  </select>
+                  {selectedDeviceType === 'Custom' && (
+                    <input type="text" value={customDeviceName} onChange={e => setCustomDeviceName(e.target.value)}
+                      placeholder="Enter custom device name..."
+                      className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500" autoFocus />
+                  )}
+                  <button type="button" onClick={handleAddDevice}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center whitespace-nowrap gap-2">
+                    <Icons.Plus /> Add Device
+                  </button>
+                </div>
+              </div>
+
+              {devices.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 border-2 border-dashed border-gray-200 rounded-xl text-sm">
+                  No devices added yet for this floor.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {devices.map((device, di) => (
+                    <div key={device.id} className="flex flex-col sm:flex-row items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      {/* Index badge + Device name */}
+                      <div className="w-full sm:w-auto flex items-center gap-2 min-w-[160px]">
+                        <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-md font-mono">{di + 1}</span>
+                        <span className="font-semibold text-slate-700 text-sm">{device.name}</span>
+                      </div>
+                      {/* Device Number */}
+                      <div className="w-full sm:w-36 flex-shrink-0">
+                        <label className="block text-xs text-slate-400 mb-1">Device No.</label>
+                        <select value={device.deviceNumSelect}
+                          onChange={e => updateDevice(device.id, 'deviceNumSelect', e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                          {DEVICE_NUMBER_PRESETS.map(n => <option key={n} value={n}>{n === 'Custom' ? '-- Custom --' : n}</option>)}
+                        </select>
+                        {device.deviceNumSelect === 'Custom' && (
+                          <input type="text" value={device.deviceNumCustom}
+                            onChange={e => updateDevice(device.id, 'deviceNumCustom', e.target.value)}
+                            placeholder="Enter no."
+                            className="w-full mt-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono" autoFocus />
+                        )}
+                      </div>
+                      {/* IP Address */}
+                      <div className="w-full flex-1">
+                        <label className="block text-xs text-slate-400 mb-1">IP Address</label>
+                        <input type="text" value={device.ip}
+                          onChange={e => updateDevice(device.id, 'ip', e.target.value)}
+                          placeholder="e.g. 192.168.1.100"
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" required />
+                      </div>
+                      <button type="button" onClick={() => removeDevice(device.id)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Remove Device">
+                        <Icons.Trash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Main App ─────────────────────────────────────────────────────────────
     function App() {
       const [records, setRecords] = useState([]);
       const [isLoading, setIsLoading] = useState(true);
       const [loadingError, setLoadingError] = useState('');
-      
-      const [currentScreen, setCurrentScreen] = useState('selection'); 
+      const [currentScreen, setCurrentScreen] = useState('selection');
       const [selectedBranch, setSelectedBranch] = useState(null);
-
-      const [searchMode, setSearchMode] = useState('jobId'); 
+      const [searchMode, setSearchMode] = useState('jobId');
       const [searchInput, setSearchInput] = useState('');
       const [searchError, setSearchError] = useState('');
-
       const [selCustomer, setSelCustomer] = useState('');
       const [selState, setSelState] = useState('');
       const [selBranch, setSelBranch] = useState('');
       const [selDept, setSelDept] = useState('');
-
       const [userName, setUserName] = useState('');
-      const [selectedDeviceType, setSelectedDeviceType] = useState(PRESET_DEVICES[0]);
-      const [customDeviceName, setCustomDeviceName] = useState('');
-      const [addedDevices, setAddedDevices] = useState([]);
+      const [recordFromJobId, setRecordFromJobId] = useState('');
+      const [floors, setFloors] = useState([]);
+      const [customFloorInput, setCustomFloorInput] = useState('');
+      const [addFloorMode, setAddFloorMode] = useState(false);
+      const [remarks, setRemarks] = useState('');
       const [submitSuccess, setSubmitSuccess] = useState(false);
 
-      // --- FETCH DATA FROM CSV FILE ---
       useEffect(() => {
-        setIsLoading(true);
-        // This looks for "data.csv" in the same folder on GitHub
         fetch('./data.csv')
-          .then(response => {
-            if (!response.ok) throw new Error("Could not find data.csv");
-            return response.text();
-          })
-          .then(text => {
-            const parsed = parseCSV(text);
-            setRecords(parsed);
-            setIsLoading(false);
-          })
-          .catch(err => {
-            console.error(err);
-            setLoadingError("Failed to load records. Please ensure data.csv is uploaded to GitHub.");
-            setIsLoading(false);
-          });
+          .then(r => { if (!r.ok) throw new Error("Could not find data.csv"); return r.text(); })
+          .then(text => { setRecords(parseCSV(text)); setIsLoading(false); })
+          .catch(err => { console.error(err); setLoadingError("Failed to load records. Please ensure data.csv is in the same folder on GitHub."); setIsLoading(false); });
       }, []);
 
       const resetSelection = () => {
@@ -131,17 +309,14 @@
       };
 
       const uniqueCustomers = useMemo(() => [...new Set(records.map(r => r.customer))].sort(), [records]);
-      
       const availableStates = useMemo(() => {
         if (!selCustomer) return [];
         return [...new Set(records.filter(r => r.customer === selCustomer).map(r => r.state))].sort();
       }, [records, selCustomer]);
-
       const availableBranches = useMemo(() => {
         if (!selCustomer || !selState) return [];
         return [...new Set(records.filter(r => r.customer === selCustomer && r.state === selState).map(r => r.branch))].sort();
       }, [records, selCustomer, selState]);
-
       const availableDepts = useMemo(() => {
         if (!selCustomer || !selState || !selBranch) return [];
         return [...new Set(records.filter(r => r.customer === selCustomer && r.state === selState && r.branch === selBranch).map(r => r.department))].sort();
@@ -151,73 +326,62 @@
         e.preventDefault();
         setSearchError('');
         const match = records.find(r => r.id === searchInput.trim());
-        if (match) {
-          startUpdateForm(match);
-        } else {
-          setSearchError('Job ID not found. Please verify and try again.');
-        }
+        if (match) startUpdateForm(match);
+        else setSearchError('Job ID not found. Please verify and try again.');
       };
 
       const handleProceedHierarchy = () => {
-        const match = records.find(r => 
-          r.customer === selCustomer && 
-          r.state === selState && 
-          r.branch === selBranch && 
-          r.department === selDept
-        );
+        const match = records.find(r =>
+          r.customer === selCustomer && r.state === selState &&
+          r.branch === selBranch && r.department === selDept);
         if (match) startUpdateForm(match);
       };
 
       const startUpdateForm = (branchData) => {
         setSelectedBranch(branchData);
         setUserName('');
-        setAddedDevices([]);
+        setRecordFromJobId('');
+        setRemarks('');
         setSubmitSuccess(false);
-        setSelectedDeviceType(PRESET_DEVICES[0]);
-        setCustomDeviceName('');
+        setAddFloorMode(false);
+        setCustomFloorInput('');
+        setFloors(DEFAULT_FLOORS.map(name => ({ id: Date.now() + Math.random(), name, devices: [], networkDetails: { subnet: '', gateway: '', dnsList: [] } })));
         setCurrentScreen('form');
       };
 
-      const handleAddDevice = (e) => {
-        e.preventDefault();
-        let devName = selectedDeviceType;
-        if (devName === 'Custom') {
-          if (!customDeviceName.trim()) return;
-          devName = customDeviceName.trim();
-        }
-        setAddedDevices([...addedDevices, { id: Date.now(), name: devName, ip: '' }]);
-        if (selectedDeviceType === 'Custom') setCustomDeviceName('');
+      const handleFloorChange = (index, updatedFloor) => {
+        setFloors(prev => prev.map((f, i) => i === index ? updatedFloor : f));
       };
 
-      const handleUpdateDeviceIp = (id, newIp) => {
-        setAddedDevices(addedDevices.map(d => d.id === id ? { ...d, ip: newIp } : d));
+      const handleRemoveFloor = (index) => {
+        setFloors(prev => prev.filter((_, i) => i !== index));
       };
 
-      const handleRemoveDevice = (id) => {
-        setAddedDevices(addedDevices.filter(d => d.id !== id));
+      const handleAddFloor = () => {
+        const name = customFloorInput.trim();
+        if (!name) return;
+        setFloors(prev => [...prev, { id: Date.now(), name, devices: [], networkDetails: { subnet: '', gateway: '', dnsList: [] } }]);
+        setCustomFloorInput('');
+        setAddFloorMode(false);
       };
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Submitting Data:", { jobId: selectedBranch.id, userName: userName, devices: addedDevices });
+        console.log("Submitting:", { jobId: selectedBranch.id, recordFromJobId, userName, floors, remarks });
         setSubmitSuccess(true);
-        setTimeout(() => {
-          setCurrentScreen('selection');
-          resetSelection();
-        }, 3000);
+        setTimeout(() => { setCurrentScreen('selection'); resetSelection(); }, 3000);
       };
 
+      // ── Selection Screen ──
       if (currentScreen === 'selection') {
         return (
           <div className="min-h-screen text-slate-800 p-4 md:p-8 font-sans">
             <div className="max-w-4xl mx-auto">
-              
               {loadingError && (
                 <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-sm">
                   <strong>Error:</strong> {loadingError}
                 </div>
               )}
-
               <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-sm mb-6 border border-gray-100">
                 <div>
                   <h1 className="text-2xl font-bold text-slate-800 flex items-center">
@@ -225,6 +389,11 @@
                   </h1>
                   <p className="text-slate-500 text-sm mt-1">Select a branch to update device details.</p>
                 </div>
+                {isLoading && (
+                  <div className="mt-4 md:mt-0 bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
+                    <Icons.Spinner /> Loading data...
+                  </div>
+                )}
               </div>
 
               {!isLoading && records.length > 0 && (
@@ -237,50 +406,56 @@
                       <div className="flex items-center justify-center gap-2"><Icons.Filter /> Select from List</div>
                     </button>
                   </div>
-
                   <div className="p-6 md:p-8">
                     {searchMode === 'jobId' && (
                       <form onSubmit={handleSearchJobId} className="max-w-md mx-auto space-y-6 py-4">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-2">Enter Job ID</label>
-                          <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="e.g. 2669" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required />
+                          <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="e.g. 2669"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" required />
                           {searchError && <p className="text-red-500 text-sm mt-2">{searchError}</p>}
                         </div>
                         <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors shadow-sm">Find Record</button>
                       </form>
                     )}
-
                     {searchMode === 'hierarchy' && (
                       <div className="space-y-5 max-w-2xl mx-auto py-2">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-2">Customer</label>
-                          <select value={selCustomer} onChange={(e) => { setSelCustomer(e.target.value); setSelState(''); setSelBranch(''); setSelDept(''); }} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                          <select value={selCustomer} onChange={e => { setSelCustomer(e.target.value); setSelState(''); setSelBranch(''); setSelDept(''); }}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                             <option value="">-- Select Customer --</option>
                             {uniqueCustomers.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-2">State</label>
-                          <select value={selState} onChange={(e) => { setSelState(e.target.value); setSelBranch(''); setSelDept(''); }} disabled={!selCustomer} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <select value={selState} onChange={e => { setSelState(e.target.value); setSelBranch(''); setSelDept(''); }} disabled={!selCustomer}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
                             <option value="">-- Select State --</option>
                             {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-2">Branch</label>
-                          <select value={selBranch} onChange={(e) => { setSelBranch(e.target.value); setSelDept(''); }} disabled={!selState} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <select value={selBranch} onChange={e => { setSelBranch(e.target.value); setSelDept(''); }} disabled={!selState}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
                             <option value="">-- Select Branch --</option>
                             {availableBranches.map(b => <option key={b} value={b}>{b}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-2">Department</label>
-                          <select value={selDept} onChange={(e) => setSelDept(e.target.value)} disabled={!selBranch} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
+                          <select value={selDept} onChange={e => setSelDept(e.target.value)} disabled={!selBranch}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 bg-white">
                             <option value="">-- Select Department --</option>
                             {availableDepts.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                         </div>
-                        <button onClick={handleProceedHierarchy} disabled={!selDept} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-medium py-3 rounded-lg transition-colors shadow-sm">Proceed to Update</button>
+                        <button onClick={handleProceedHierarchy} disabled={!selDept}
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-medium py-3 rounded-lg transition-colors shadow-sm">
+                          Proceed to Update
+                        </button>
                       </div>
                     )}
                   </div>
@@ -291,6 +466,7 @@
         );
       }
 
+      // ── Form Screen ──
       return (
         <div className="min-h-screen text-slate-800 p-4 md:p-8 font-sans">
           <div className="max-w-4xl mx-auto">
@@ -299,79 +475,113 @@
             </button>
 
             {submitSuccess && (
-              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center shadow-sm">
+              <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center shadow-sm gap-3">
                 <Icons.Check />
                 <div>
                   <h3 className="font-bold">Successfully Updated!</h3>
-                  <p className="text-sm">The branch record for Job ID {selectedBranch.id} has been saved. Returning to menu...</p>
+                  <p className="text-sm">Branch record for Job ID {selectedBranch.id} has been saved. Returning to menu...</p>
                 </div>
               </div>
             )}
 
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+              {/* Branch header */}
               <div className="bg-slate-800 text-white p-6 md:p-8">
                 <h2 className="text-2xl md:text-3xl font-extrabold mb-2 leading-tight">{selectedBranch.branch}</h2>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-slate-300 text-sm md:text-base">
-                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">JOB ID:</span> <span className="bg-slate-700 px-2 py-1 rounded text-white font-mono">{selectedBranch.id}</span></div>
-                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">CUSTOMER:</span> {selectedBranch.customer}</div>
-                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">STATE:</span> {selectedBranch.state}</div>
-                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">DEPT:</span> <span className={selectedBranch.department === 'Nil' ? 'italic text-slate-500' : ''}>{selectedBranch.department}</span></div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">JOB ID:</span><span className="bg-slate-700 px-2 py-1 rounded text-white font-mono">{selectedBranch.id}</span></div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">CUSTOMER:</span>{selectedBranch.customer}</div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">STATE:</span>{selectedBranch.state}</div>
+                  <div className="flex items-center"><span className="font-semibold text-slate-400 mr-2">DEPT:</span><span className={selectedBranch.department === 'Nil' ? 'italic text-slate-500' : ''}>{selectedBranch.department}</span></div>
                 </div>
               </div>
 
-              <div className="p-6 md:p-8">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Your Name *</label>
-                      <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Enter your full name" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Job ID</label>
-                      <input type="text" value={selectedBranch.id} disabled className="w-full p-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 font-mono" />
-                    </div>
-                  </div>
+              <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
 
-                  <hr className="border-gray-200" />
-
+                {/* Section 1 — Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">Devices & IP Configuration</h3>
-                    
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
-                      <label className="block text-sm font-medium text-blue-900 mb-2">Add a Device</label>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <select value={selectedDeviceType} onChange={(e) => setSelectedDeviceType(e.target.value)} className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500">
-                          {PRESET_DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
-                          <option value="Custom">-- Custom Device --</option>
-                        </select>
-                        {selectedDeviceType === 'Custom' && (
-                          <input type="text" value={customDeviceName} onChange={(e) => setCustomDeviceName(e.target.value)} placeholder="Enter custom device name..." className="p-3 border border-gray-300 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-blue-500" autoFocus />
-                        )}
-                        <button type="button" onClick={handleAddDevice} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center whitespace-nowrap"><Icons.Plus /> Add Device</button>
-                      </div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Your Name *</label>
+                    <input type="text" value={userName} onChange={e => setUserName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Record from Job ID</label>
+                    <input type="text" value={recordFromJobId} onChange={e => setRecordFromJobId(e.target.value)}
+                      placeholder="Enter Job ID manually"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                  </div>
+                </div>
+
+                <hr className="border-gray-200" />
+
+                {/* Section 2 — Floor Levels */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Icons.Layers /> Floor Levels
+                    </h3>
+                  </div>
+
+                  {floors.map((floor, index) => (
+                    <FloorSection
+                      key={floor.id}
+                      floor={floor}
+                      index={index}
+                      onChange={handleFloorChange}
+                      onRemove={handleRemoveFloor}
+                      canRemove={floors.length > 1}
+                    />
+                  ))}
+
+                  {/* Add Floor */}
+                  {!addFloorMode ? (
+                    <button type="button" onClick={() => setAddFloorMode(true)}
+                      className="w-full py-3 border-2 border-dashed border-blue-300 text-blue-600 hover:border-blue-500 hover:bg-blue-50 rounded-xl font-medium transition-colors flex items-center justify-center gap-2">
+                      <Icons.Plus /> Add Floor
+                    </button>
+                  ) : (
+                    <div className="flex gap-3 items-center bg-blue-50 p-4 rounded-xl border border-blue-200">
+                      <input type="text" value={customFloorInput} onChange={e => setCustomFloorInput(e.target.value)}
+                        placeholder="e.g. 3rd Floor, Basement, Rooftop..."
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddFloor(); } }} />
+                      <button type="button" onClick={handleAddFloor}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium transition-colors whitespace-nowrap">
+                        Add
+                      </button>
+                      <button type="button" onClick={() => { setAddFloorMode(false); setCustomFloorInput(''); }}
+                        className="px-4 py-3 border border-gray-300 text-slate-500 rounded-lg hover:bg-gray-100 transition-colors whitespace-nowrap">
+                        Cancel
+                      </button>
                     </div>
+                  )}
+                </div>
 
-                    {addedDevices.length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 border-2 border-dashed border-gray-200 rounded-xl">No devices added yet. Select a device above and click "Add Device".</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {addedDevices.map((device, index) => (
-                          <div key={device.id} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="w-full sm:w-1/3 font-semibold text-slate-700 flex items-center"><span className="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-md mr-3">{index + 1}</span>{device.name}</div>
-                            <div className="w-full sm:w-flex-1 flex-1"><input type="text" value={device.ip} onChange={(e) => handleUpdateDeviceIp(device.id, e.target.value)} placeholder="Enter IP Address (e.g. 192.168.1.100)" className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" required /></div>
-                            <button type="button" onClick={() => handleRemoveDevice(device.id)} className="w-full sm:w-auto p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Remove Device"><Icons.Trash /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <hr className="border-gray-200" />
 
-                  <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-4">
-                    <button type="button" onClick={() => setCurrentScreen('selection')} className="px-6 py-3 border border-gray-300 text-slate-600 font-medium rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-                    <button type="submit" disabled={addedDevices.length === 0 || submitSuccess} className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold rounded-xl shadow-md transition-colors">{submitSuccess ? 'Submitted!' : 'Submit Update'}</button>
-                  </div>
-                </form>
-              </div>
+                {/* Section 3 — Remarks */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-3">Remarks</h3>
+                  <textarea value={remarks} onChange={e => setRemarks(e.target.value)}
+                    placeholder="Add any additional notes, observations, or remarks here..."
+                    rows={4}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y text-sm" />
+                </div>
+
+                {/* Submit */}
+                <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-4">
+                  <button type="button" onClick={() => setCurrentScreen('selection')}
+                    className="px-6 py-3 border border-gray-300 text-slate-600 font-medium rounded-xl hover:bg-gray-50 transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={submitSuccess}
+                    className="px-8 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold rounded-xl shadow-md transition-colors">
+                    {submitSuccess ? 'Submitted!' : 'Submit Update'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
