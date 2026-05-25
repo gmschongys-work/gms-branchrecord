@@ -110,7 +110,7 @@
       useEffect(() => {
         setIsLoading(true);
         // This looks for "data.csv" in the same folder on GitHub
-        fetch('https://raw.githubusercontent.com/gmschongys-work/3gms-branchrecord/main/data.csv')
+        fetch('https://raw.githubusercontent.com/gmschongys-work/gms-branchrecord/main/data.csv')
           .then(response => {
             if (!response.ok) throw new Error("Could not find data.csv");
             return response.text();
