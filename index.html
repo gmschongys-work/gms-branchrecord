@@ -628,14 +628,13 @@
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
                 <div className="flex border-b border-gray-200">
-                  <button onClick={() => setSearchMode('jobId')} className={\`flex-1 py-4 px-6 text-center font-medium transition-colors \${searchMode === 'jobId' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}\`}>
-                    <div className="flex items-center justify-center gap-2"><Icons.Search /> Search by Job ID</div>
-                  </button>
-                  <button onClick={() => setSearchMode('hierarchy')} className={\`flex-1 py-4 px-6 text-center font-medium transition-colors \${searchMode === 'hierarchy' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}\`}>
-                    <div className="flex items-center justify-center gap-2"><Icons.Filter /> Select from List</div>
-                  </button>
+                      <button onClick={() => setSearchMode('jobId')} className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${searchMode === 'jobId' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}`}>
+                        <div className="flex items-center justify-center gap-2"><Icons.Search /> Search by Job ID</div>
+                      </button>
+                      <button onClick={() => setSearchMode('hierarchy')} className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${searchMode === 'hierarchy' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-gray-50'}`}>
+                        <div className="flex items-center justify-center gap-2"><Icons.Filter /> Select from List</div>
+                      </button>
                 </div>
 
                 <div className="p-6 md:p-8">
